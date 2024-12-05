@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../index.css';
-import React from 'react';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -16,7 +15,13 @@ function Login() {
     e.preventDefault();
     setMessage(''); // Clear any previous messages
     try {
-      const response = await axios.post('http://localhost:5000/login', { email, password, role });
+      const response = await axios.post(
+        'http://localhost:5001/login', // Correct backend port
+        { email, password, role },
+        {
+          headers: { 'Content-Type': 'application/json' }, // Explicitly set headers
+        }
+      );
       setMessage(response.data.message);
       setError(false); // Mark as success
       localStorage.setItem('token', response.data.token);

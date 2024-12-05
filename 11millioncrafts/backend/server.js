@@ -8,11 +8,26 @@ require('dotenv').config();
 const User = require('./models/User'); // Import User model
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(
+  cors({
+    origin: 'http://localhost:5174', // Allow requests from this frontend origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+    credentials: true, // Allow cookies or credentials
+  })
+);
+
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5174');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(200); // Respond with HTTP 200 for OPTIONS requests
+});
 
 // MongoDB Connection
 mongoose
@@ -43,6 +58,7 @@ app.post('/register', async (req, res) => {
 });
 
 // Login Endpoint
+// Login Endpoint
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -61,15 +77,21 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials!' });
     }
 
-    const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, {
-      expiresIn: '1h',
-    });
+    // Add user role to the token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: 'User' }, // Set default role for now
+      process.env.SECRET_KEY,
+      {
+        expiresIn: '1h',
+      }
+    );
 
-    res.status(200).json({ message: 'Login successful!', token });
+    res.status(200).json({ message: 'Login successful!', token, role: 'User' }); // Add role to response
   } catch (error) {
     res.status(500).json({ message: 'Server error!' });
   }
 });
+
 
 // Start Server
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
